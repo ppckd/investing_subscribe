@@ -1,26 +1,16 @@
-import pymysql
+import sys
+sys.path.append(r'C:/Users/bp/Documents/GitHub/investing_subscribe/DAO')
+import DAO
 
-
-class Calprofit:
-
-    def predict_stock(self):
-        ic_db = pymysql.connect(
-            user='invest_admin',
-            passwd='abc123',
-            host='127.0.0.1',
-            db='ic_db',
-            charset='utf8'
-        )
-
-        sql = """INSERT INTO superchat(roomNo, userID, stockName, stockCode, currentPrice, predictPrice, stopLossPrice, today, predictDate, contents, createdTime)
-                VALUES({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
-                """.format(roomNo, userID, stockName, stockCode, currentPrice, predictPrice, stopLossPrice, today,
-                           predictDate, contents, createdTime)
-
-        cursor.execute(sql)
-        ic_db.commit()
-        conn.close()
-
-    def cal_stock(self):
-        pass
-
+def superChatInput(info_list):
+    DAO.insert_super_chat(info_list[0],
+                          info_list[1],
+                          info_list[2],
+                          info_list[3],
+                          info_list[4],
+                          info_list[5],
+                          info_list[6],
+                          info_list[7],
+                          info_list[8],
+                          info_list[9],
+                          )

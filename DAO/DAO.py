@@ -30,6 +30,19 @@ def select_superchat():
 
     return superchat
 
+def insert_super_chat(roomNo, userID, stockName, stockCode, currentPrice, predictPrice, stopLossPrice, today,
+                       predictDate, contents):
+    ic_db = db_connect()
+    cursor = ic_db.cursor(pymysql.cursors.DictCursor)
+    sql = """INSERT INTO superchat(roomNo, userID, stockName, stockCode, currentPrice, predictPrice, stopLossPrice, today, predictDate, contents, createdTime)
+            VALUES('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}', NOW())
+            """.format(roomNo, userID, stockName, stockCode, currentPrice,
+                       predictPrice, stopLossPrice, today,
+                       predictDate, contents)
+    cursor.execute(sql)
+    ic_db.commit()
+
+
 def acture_price(stock_code):
     url = 'https://finance.naver.com/item/sise_day.nhn?code={}'.format(stock_code)
 

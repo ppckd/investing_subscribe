@@ -1,103 +1,77 @@
 import sys
-sys.path.append(r'C:/Users/bp/Documents/investing_subscribe/DAO')
+sys.path.append(r'C:/Users/bp/Documents/GitHub/investing_subscribe/DAO')
+sys.path.append(r'C:/Users/bp/Documents/GitHub/investing_subscribe/templates')
 import DAO
-import RoomMetaData
+import RoomMetaData, SuperChatRoom, SuperChatInput, UserRoom
+import SuperChatInputHtml
+from flask import Flask, render_template, request
 
-import datetime
-import logging
-import os
+'''
+기본기능
+1. 리딩방 순위 보여주기(구현완료)
+2. 방을 선택하면 메타데이터 보여주기(구현완료)
+3. 슈퍼챗
+    3-1. 슈퍼챗 입력하기(구현완료)
+    3-2. 슈퍼챗 보기(구현완료)
+    3-3. 슈퍼챗 구독하기(Enter)(구현미완료)
+4. 일반채팅 하기(구현미완료)
 
-from flask import Flask
+추가기능
+1. DB접속 확인하기
+2. 로그 찍기
+3. 접근 권한 설정하기
+4. 입력 간소화 및 검증
+'''
 
+try:
+    print("DB 접속 중")
+    dbConnect = DAO.dbconnect()
+except:
+    print("DB접속 에러")
 
-
-
-room_ranking = DAO.view_room_ranking().to_html(index=False)
 app = Flask(__name__, static_url_path='/static')
 
+@app.route('/')
 @app.route('/ranking')
 def ranking():
+    room_ranking = DAO.view_room_ranking().to_html(index=False)
+    return f'<h1>만나서 반갑습니다.</h1> <h2> 리딩방 랭킹입니다 </h2> {room_ranking}'
 
-    return f'<h1>리딩방 랭킹</h1>{room_ranking}'
+@app.route('/ranking/<int:room_no>')
+def room_meta_data(room_no):
+    high_return, hit_Rate, room_title = RoomMetaData.roomMetaData(room_no)
+    return f'<h1>{room_title}방의 메타데이터 </h1> <h2> 수익률 top3 </h2>{high_return} <h2>적중률: {hit_Rate}</h2>'
 
 @app.route('/user/<user_name>')
 def user(user_name):
-    inRoomInfo = DAO.user_room(user_name)
-    inRoomInfo = inRoomInfo.loc[inRoomInfo['nickname']==user_name][['roomNo', 'title', 'fee', 'rankingPoint']].to_html(index=False)
+    inRoomInfo = UserRoom.userRoom(user_name)
     return f'<h1>Hello, {user_name}</h1> 참여방 목록: {inRoomInfo}'
 
+@app.route('/superChatInput',  methods=['GET', 'POST'])
+def iunput_user():
+    htmlcode = SuperChatInputHtml.superChatInputHtml()
+    if request.method == 'POST':
+        temp_list = []
+        temp_list.append(request.form.get("roomNo"))
+        temp_list.append(request.form.get("userID"))
+        temp_list.append(request.form.get("stockName"))
+        temp_list.append(request.form.get("stockCode"))
+        temp_list.append(request.form.get("currentPrice"))
+        temp_list.append(request.form.get("predictPrice"))
+        temp_list.append(request.form.get("stopLossPrice"))
+        temp_list.append(request.form.get("today"))
+        temp_list.append(request.form.get("predictDate"))
+        temp_list.append(request.form.get("contents"))
+        SuperChatInput.superChatInput(temp_list)
+    return htmlcode
+
 @app.route('/user/<user_name>/<int:room_no>')
-def superchat_room(user_name, room_no):
-    superChat = DAO.select_superchat()
-    superChat = superChat.loc[superChat['roomNo'] == room_no]
-    roomTitle = superChat['title'].unique()[0]
-    superChat = superChat[['stockName', 'currentPrice', 'predictPrice', 'stopLossPrice', 'today', 'predictDate', 'contents', 'point']]
-    return f'<h1>Hello, {user_name} </h1><h2> [{room_no}]{roomTitle}방 리딩정보:</h2> {superChat.to_html(index=False)}'
+def super_chat_room(user_name, room_no):
+    super_chat, room_title = SuperChatRoom.superChatRoom(room_no)
+    return f'<h1>Hello, {user_name} </h1><h2> [{room_no}]{room_title}방 리딩정보:</h2> {super_chat}'
 
 
 if __name__ == '__main__':
-    # threaded=True 로 넘기면 multiple plot이 가능해짐
-  app.run(host="127.0.0.1", port=8080, debug=True)
+  app.run(host="127.0.0.1", port=8080, debug=True, threaded=True)
 
 
-'''
-접속하면은
-
-방 순위 보여주기
-
-방을 선택하면은 메타데이터 보여주기
-
-1. 슈퍼챗 들어가기
-1-1 방장은 슈퍼챗 입력
-1-1.1 슈퍼챗 뿌려주기
-
-2. 일반채팅 하기
-'''
-
-# try:
-#     print("DB 접속 중")
-#     dbConnect = DAO.dbconnect()
-# except:
-#     print("DB접속 에러")
-
-
-
-
-from threading import Thread
-
-# 순위 공개
-# room_ranking = DAO.view_room_ranking()
-# print(room_ranking)
-#
-# while True:
-#     print("""
-#     =====menu======
-#     1. 메타데이터 확인
-#     2. 슈퍼챗(공지방) 입장
-#     3. 채팅방 입장
-#     ===============
-#     """)
-#     # 메타데이터
-#     menuNum = input("메뉴를 선택하세요 :")
-#
-#     if menuNum == "1":
-#         while True:
-#             try:
-#                 roomNum = int(input("보고 싶은 슈퍼챗 방번호를 입력하세요"))
-#                 RoomMetaData.roomMetaData(roomNum)
-#                 break
-#             except:
-#                 print("다시 숫자를 입력하세요")
-#
-#     elif menuNum == "2":
-#         userName = input("사용자 ID를 입력하세요")
-#         inRoomNo = DAO.user_room(userName)
-#         print("입장할 방을 선택하세요", inRoomNo)
-#         roomNum = int(input(":"))
-#         superChat = DAO.select_superchat()
-#
-#
-#     else:
-#         break
-#
-#
